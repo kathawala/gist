@@ -21,13 +21,16 @@ EXAMPLES
 
 Create a gist under your username using an existing text file
 
-> `gist -u exampleuser -f test.txt`
+> `gist.sh -u exampleuser -f test.txt`
 
-Create an anonymous gist specifying gist name and text contents at command line (newlines need to be specified using '\n' character)
+Create an anonymous gist specifying gist name and text contents at command line (newlines need to be specified using '\n' character).
 
-> `gist -n test -c "This is a test\nPlease ignore"`
+> `gist.sh -n test -c "This is a test\nPlease ignore"`
 
-Keep in mind that when specifying content at the command line, newlines must be specified.
+OUTPUT
+======
+
+Return value is the URL of the gist you have just posted.
 
 CONTACT
 =======
