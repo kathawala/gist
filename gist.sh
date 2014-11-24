@@ -34,8 +34,8 @@ while getopts "f:n:c:u:" flag; do
 	    FILENAME="\"${OPTARG}\""
 	    ;;
 	c)
-            #We expect the user to provide his/her own newlines, but we can escape
-            #double-quotes for him/her
+            # We expect the user to provide his/her own newlines, but we can escape
+            # double-quotes for him/her
             CONTENT="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
