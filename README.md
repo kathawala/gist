@@ -1,8 +1,4 @@
-GIST
-====
-
 Bash script which allows you to post a text file as a Github Gist
-
 
 USAGE
 =====
@@ -20,7 +16,16 @@ FLAGS
 
 -u    Specify the user (makes the gist private)
 
--a    Create anonymous gist
+EXAMPLES
+========
+
+Create a gist under your username using an existing text file
+
+> `gist -u exampleuser -f test.txt`
+
+Create an anonymous gist specifying gist name and text contents at command line (newlines need to be specified using '\n' character)
+
+> `gist -n test -c "This is a test\nPlease ignore`
 
 CONTACT
 =======
