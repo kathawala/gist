@@ -22,7 +22,8 @@ while getopts "f:n:c:u:" flag; do
 	    FILENAME="\"${OPTARG}\""
 	    ;;
 	c)
-	    CONTENT="\"${OPTARG}\""
+	    CONTENT=${OPTARG}
+	    CONTENT="\"$(echo ${CONTENT} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
 	    USER="--user ${OPTARG}"
