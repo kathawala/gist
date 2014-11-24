@@ -3,16 +3,23 @@
 USER=
 FILENAME=
 CONTENT=
-DATA=
+TMP_FILE=/tmp/temporary_gist_file
+trap "rm ${TMP_FILE} &> /dev/null" EXIT
 
 while getopts "f:n:c:u:" flag; do
     case ${flag} in
 	f)
-	    FILENAME="\"$(basename ${OPTARG})\""
-	    CONTENT="\"$(awk '{print $0"\\n"}' ${OPTARG})\""
+	    if [ ! -f ${OPTARG} ]; then
+		echo "${OPTARG} does not exist. Please specify an existing filename"
+		exit 1
+	    else		
+		FILENAME="\"$(basename ${OPTARG})\""
+		CONTENT=$(awk '{print $0"\\n"}' ${OPTARG})
+		CONTENT="\"$(echo ${CONTENT} | awk '{gsub(/"/, "\\\"")} 1')\""
+	    fi
 	    ;;
 	n)
-	    FILENAME="\"$(basename ${OPTARG})\""
+	    FILENAME="\"${OPTARG}\""
 	    ;;
 	c)
 	    CONTENT="\"${OPTARG}\""
@@ -21,15 +28,12 @@ while getopts "f:n:c:u:" flag; do
 	    USER="--user ${OPTARG}"
 	    ;;
 	*)
-	    error "Unexpected option ${flag}"
+	    exit 1
 	    ;;
 	    
     esac
 done
 
-DATA="{\"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}"
+echo "{\"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
 
-echo "${DATA}" > test
-trap "rm test > /dev/null" EXIT
-
-curl ${USER} -X POST -H 'Content-Type: application/json' -d @test https://api.github.com/gists
+curl ${USER} -X POST -H 'Content-Type: application/json' -d @${TMP_FILE} https://api.github.com/gists
