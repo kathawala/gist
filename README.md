@@ -25,7 +25,9 @@ Create a gist under your username using an existing text file
 
 Create an anonymous gist specifying gist name and text contents at command line (newlines need to be specified using '\n' character)
 
-> `gist -n test -c "This is a test\nPlease ignore`
+> `gist -n test -c "This is a test\nPlease ignore"`
+
+Keep in mind that when specifying content at the command line, newlines must be specified.
 
 CONTACT
 =======
