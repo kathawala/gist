@@ -8,13 +8,14 @@ set -o errexit
 USER=
 FILENAME=
 CONTENT=
+PUBLIC="false"
 
 # We will send this file in the curl POST request, it gets removed when we finish
 TMP_FILE=/tmp/temporary_gist_file
 trap "rm ${TMP_FILE} &> /dev/null" EXIT
 
 # Check all the flags, have plans to add in a verbose and quiet flag, but not yet
-while getopts "f:n:c:u:" flag; do
+while getopts "f:n:c:u:p" flag; do
     case ${flag} in
 	f)
 	    if [ ! -f ${OPTARG} ]; then
@@ -34,12 +35,18 @@ while getopts "f:n:c:u:" flag; do
 	    FILENAME="\"${OPTARG}\""
 	    ;;
 	c)
-            # We expect the user to provide his/her own newlines, but we can escape
-            # double-quotes for him/her
+            #We expect the user to provide his own newlines, but we can escape
+            #double-quotes for him
             CONTENT="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
 	    USER="--user ${OPTARG}"
+	    ;;
+	a)
+	    USER=
+	    ;;
+	p)
+	    PUBLIC="true"
 	    ;;
 	*)
 	    exit 1
@@ -49,7 +56,7 @@ while getopts "f:n:c:u:" flag; do
 done
 						     
 # This is the formatting of the JSON request as per the Github Gist API
-echo "{\"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
+echo "{\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
 
 # This line has a lot going for it. We send the curl request, with
 # user-authentication if requested, and set up the POST request.
@@ -62,3 +69,4 @@ if [ ${PIPESTATUS[1]} -ne 0 ]; then
        echo "ERROR: gist failed to post, script exiting..."
        exit 1
    fi
+
