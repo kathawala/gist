@@ -55,3 +55,10 @@ echo "{\"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
 # user-authentication if requested, and set up the POST request.
 # We process the response HTML and print the URL of the gist to the user
 curl --silent ${USER} -X POST -H 'Content-Type: application/json' -d @${TMP_FILE} https://api.github.com/gists | grep "html_url" | head -n 1 | awk '{gsub(/^ +/, "")} 1'
+
+# If we could not find the html_url in the response, then we have to tell the
+# user that the http request failed and that his/her gist was not posted
+if [ ${PIPESTATUS[1]} -ne 0 ]; then
+       echo "ERROR: gist failed to post, script exiting..."
+       exit 1
+   fi
