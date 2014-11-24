@@ -8,7 +8,7 @@ set -o errexit
 USER=
 FILENAME=
 CONTENT=
-PUBLIC="false"
+PUBLIC="true"
 
 # We will send this file in the curl POST request, it gets removed when we finish
 TMP_FILE=/tmp/temporary_gist_file
@@ -46,7 +46,7 @@ while getopts "f:n:c:u:p" flag; do
 	    USER=
 	    ;;
 	p)
-	    PUBLIC="true"
+	    PUBLIC="false"
 	    ;;
 	*)
 	    exit 1
