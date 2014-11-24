@@ -16,6 +16,8 @@ FLAGS
 
 -u    Specify the user (makes the gist private)
 
+-p    Specify the creation of a private (aka "secret") gist. The default is public.
+
 EXAMPLES
 ========
 
