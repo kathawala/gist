@@ -14,7 +14,7 @@ FLAGS
 
 -c    Specify the text of the gist you'd like to create (must be used in conjunction with -n)
 
--u    Specify the user (makes the gist private)
+-u    Specify the user (default is anonymous)
 
 -p    Specify the creation of a private (aka "secret") gist. The default is public.
 
