@@ -13,9 +13,13 @@ FLAGS
 =====
 
 -f    Specify a filename of an existing file to send as a gist.
+
 -n    Specify the name of a gist you'd like to create (must be used in conjunction with -c)
+
 -c    Specify the text of the gist you'd like to create (must be used in conjunction with -n)
+
 -u    Specify the user (makes the gist private)
+
 -a    Create anonymous gist
 
 CONTACT
