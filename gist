@@ -1,0 +1,35 @@
+#!/bin/bash
+
+USER=
+FILENAME=
+CONTENT=
+DATA=
+
+while getopts "f:n:c:u:" flag; do
+    case ${flag} in
+	f)
+	    FILENAME="\"$(basename ${OPTARG})\""
+	    CONTENT="\"$(awk '{print $0"\\n"}' ${OPTARG})\""
+	    ;;
+	n)
+	    FILENAME="\"$(basename ${OPTARG})\""
+	    ;;
+	c)
+	    CONTENT="\"${OPTARG}\""
+	    ;;
+	u)
+	    USER="--user ${OPTARG}"
+	    ;;
+	*)
+	    error "Unexpected option ${flag}"
+	    ;;
+	    
+    esac
+done
+
+DATA="{\"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}"
+
+echo "${DATA}" > test
+trap "rm test > /dev/null" EXIT
+
+curl ${USER} -X POST -H 'Content-Type: application/json' -d @test https://api.github.com/gists
