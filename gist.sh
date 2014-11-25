@@ -1,6 +1,6 @@
 #!/bin/bash
-#A bash script meant to take in user input, craft an API call to Github's Gist
-#API and send the request, with content and filename filled in by the user
+# A bash script meant to take in user input, craft an API call to Github's Gist
+# API and send the request, with content and filename filled in by the user
 
 #Sends error on script failure
 set -o errexit
@@ -8,14 +8,20 @@ set -o errexit
 USER=
 FILENAME=
 CONTENT=
+DESCRIPTION=
 PUBLIC="true"
 
-# We will send this file in the curl POST request, it gets removed when we finish
+# These files get removed on exit, still looking for ways to omit them altogether
 TMP_FILE=/tmp/temporary_gist_file
-trap "rm ${TMP_FILE} &> /dev/null" EXIT
+PARSE_FILE=/tmp/temporary_gist_parsing_file
+cleanup (){
+    rm ${TMP_FILE} &> /dev/null
+    rm ${PARSE_FILE} &> /dev/null
+}
+trap cleanup EXIT
 
 # Check all the flags, have plans to add in a verbose and quiet flag, but not yet
-while getopts "f:n:c:u:p" flag; do
+while getopts "f:n:c:u:d:p" flag; do
     case ${flag} in
 	f)
 	    if [ ! -f ${OPTARG} ]; then
@@ -25,25 +31,32 @@ while getopts "f:n:c:u:p" flag; do
 		# Strip everything but the filename (/usr/test.txt -> test.txt)
 		FILENAME="\"$(basename ${OPTARG})\""
 
-		# Escape newlines and double-quotes for smooth JSON parsing
+		# Escape newlines and double-quotes and backslashes
+		# for smooth JSON parsing
 		# (Github's Gist API only accepts JSON requests)
-		CONTENT=$(awk '{print $0"\\n"}' ${OPTARG})
+	        cat ${OPTARG} | sed -e 's/\\/\\\\/g' > ${PARSE_FILE}
+		CONTENT=$(awk '{print $0"\\n"}' ${PARSE_FILE})
 		CONTENT="\"$(echo ${CONTENT} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    fi
 	    ;;
 	n)
-	    FILENAME="\"${OPTARG}\""
+            # We expect the user to provide his own newlines, but we can escape
+            # double-quotes for him
+            FILENAME="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	c)
-            #We expect the user to provide his own newlines, but we can escape
-            #double-quotes for him
+            # Again escaping double-quotes
             CONTENT="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
 	    USER="--user ${OPTARG}"
 	    ;;
-	a)
-	    USER=
+	d)
+            # Again escaping double-quotes
+            # Description variable also includes the JSON syntax of 
+            # "description": "argument" so that if a description is not specified
+            # we can still send the gist
+	    DESCRIPTION="\"description\": \"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\", "
 	    ;;
 	p)
 	    PUBLIC="false"
@@ -56,7 +69,8 @@ while getopts "f:n:c:u:p" flag; do
 done
 						     
 # This is the formatting of the JSON request as per the Github Gist API
-echo "{\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
+echo "{${DESCRIPTION}\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
+
 
 # This line has a lot going for it. We send the curl request, with
 # user-authentication if requested, and set up the POST request.
@@ -69,4 +83,3 @@ if [ ${PIPESTATUS[1]} -ne 0 ]; then
        echo "ERROR: gist failed to post, script exiting..."
        exit 1
    fi
-
