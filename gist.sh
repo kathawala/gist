@@ -22,6 +22,8 @@ cleanup (){
 }
 trap cleanup EXIT
 
+# This function takes a file as input argument and creates a valid
+# JSON string which is then set as the value of the variable CONTENT.
 # The sed and awk calls escape backslashes and double quotes and place
 # literal newlines and literal tab characters (\n\t) where newlines and
 # tabs originally were in the text.
@@ -30,15 +32,15 @@ function format_file_as_JSON_string() {
     awk '{print $0"\\n"}' ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
     awk '{gsub(/"/, "\\\"")} 1' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
     sed 's/\t/\\t/g' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
+    cat /dev/null > ${TMP}
 
-    # This block encloses the file in quotation marks and strips away all newlines
-    # so a file which looks like
+    # This block encloses the file in double quotes and strips away all newlines
+    # so a file which looks like:
     #    Hi\n
     #      Indentation\n
     #        More!\n
     # would become a valid JSON string:
     #    "Hi\n  Indentation\n    More!\n"
-    cat /dev/null > ${TMP}
     echo -n "\"" >> ${TMP}
     IFS=''
     while read -r data; do
@@ -50,29 +52,14 @@ function format_file_as_JSON_string() {
     CONTENT=$(cat ${PARSE_FILE})
 }
 
+
 # Check all the flags, have plans to add in a verbose and quiet flag, but not yet
-while getopts "f:n:c:u:d:p" flag; do
-    case ${flag} in
-	f)
-	    # Here we make sure the file exists, and if it does, format it as a
-	    # JSON string to send to Github
-	    if [ ! -f ${OPTARG} ]; then
-		echo "${OPTARG} does not exist. Please specify an existing filename"
-		exit 1
-	    else
-		# Strip everything but the filename (/usr/test.txt -> test.txt)
-		FILENAME="\"$(basename ${OPTARG})\""
-		format_file_as_JSON_string ${OPTARG}
-	    fi
-	    ;;
+while getopts "n:u:d:p" flag; do
+    case ${flag} in	    
 	n)
-            # We expect the user to escape most special characters, but we can escape
-            # double-quotes for him/her
+            # We expect the user to provide his own newlines, but we can escape
+            # double-quotes for him
             FILENAME="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
-	    ;;
-	c)
-            # Again escaping double-quotes
-            CONTENT="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
 	    USER="-u${OPTARG}"
@@ -93,8 +80,50 @@ while getopts "f:n:c:u:d:p" flag; do
 	    
     esac
 done
+
+# Check if we have no arguments, and if so, print the help message
+shift $((OPTIND - 1))
+if [ $# -eq 0 ]; then
+    cat <<EOF
+    
+    usage:  gist [-options] arg1
+    
+    options:
+        -n   Specify the name of your gist
+        -u   Specify the user (default is anonymous)
+        -d   Specify a description for your gist
+        -p   Specify the creation of a private (aka "secret" gist.
+    
+    Report bugs to: farhank@stanford.edu
+    pkg home page:  <https://github.com/kathawala/gist/blob/master/gist.sh>
+EOF
+    exit 1
+fi
+
+# If we are here we must have an argument, so we go ahead and process
+# the file given into valid JSON.
+FILE=${1}
+if [ ! -f ${FILE} ]; then
+    echo "${FILE} does not exist. Please specify an existing filename"
+    exit 1
+else
+    # Strip everything but the filename (/usr/test.txt -> test.txt)
+    if [ -z ${FILENAME} ]; then
+        FILENAME="\"$(basename ${FILE})\""
+    fi
+    format_file_as_JSON_string ${FILE}
+fi
 						     
 # This is the formatting of the JSON request as per the Github Gist API
+#{
+#  "description": "the description for this gist",
+#  "public": true,
+#  "files": {
+#    "file1.txt": {
+#      "content": "String file contents"
+#    }
+#  }
+#}
 echo "{${DESCRIPTION}\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${JSON_FILE}
 
 
@@ -109,3 +138,4 @@ if [ ${PIPESTATUS[1]} -ne 0 ]; then
        echo "ERROR: gist failed to post, script exiting..."
        exit 1
    fi
+
