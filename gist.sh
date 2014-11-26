@@ -12,36 +12,62 @@ DESCRIPTION=
 PUBLIC="true"
 
 # These files get removed on exit, still looking for ways to omit them altogether
-TMP_FILE=/tmp/temporary_gist_file
+JSON_FILE=/tmp/temporary_gist_json_file.json
 PARSE_FILE=/tmp/temporary_gist_parsing_file
+TMP=/tmp/temporary_gist_parsing_file.temp
 cleanup (){
-    rm ${TMP_FILE} &> /dev/null
+    rm ${JSON_FILE} &> /dev/null
     rm ${PARSE_FILE} &> /dev/null
+    rm ${TMP} &> /dev/null
 }
 trap cleanup EXIT
+
+# The sed and awk calls escape backslashes and double quotes and place
+# literal newlines and literal tab characters (\n\t) where newlines and
+# tabs originally were in the text.
+function format_file_as_JSON_string() {
+    sed -e 's/\\/\\\\/g' < ${1} > ${PARSE_FILE}
+    awk '{print $0"\\n"}' ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
+    awk '{gsub(/"/, "\\\"")} 1' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
+    sed 's/\t/\\t/g' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
+
+    # This block encloses the file in quotation marks and strips away all newlines
+    # so a file which looks like
+    #    Hi\n
+    #      Indentation\n
+    #        More!\n
+    # would become a valid JSON string:
+    #    "Hi\n  Indentation\n    More!\n"
+    cat /dev/null > ${TMP}
+    echo -n "\"" >> ${TMP}
+    IFS=''
+    while read -r data; do
+	line="$data"
+	echo -n "$line" >> ${TMP}
+    done < ${PARSE_FILE}
+    echo -n "\"" >> ${TMP} && mv ${TMP} ${PARSE_FILE}
+    
+    CONTENT=$(cat ${PARSE_FILE})
+}
 
 # Check all the flags, have plans to add in a verbose and quiet flag, but not yet
 while getopts "f:n:c:u:d:p" flag; do
     case ${flag} in
 	f)
+	    # Here we make sure the file exists, and if it does, format it as a
+	    # JSON string to send to Github
 	    if [ ! -f ${OPTARG} ]; then
 		echo "${OPTARG} does not exist. Please specify an existing filename"
 		exit 1
 	    else
 		# Strip everything but the filename (/usr/test.txt -> test.txt)
 		FILENAME="\"$(basename ${OPTARG})\""
-
-		# Escape newlines and double-quotes and backslashes
-		# for smooth JSON parsing
-		# (Github's Gist API only accepts JSON requests)
-	        cat ${OPTARG} | sed -e 's/\\/\\\\/g' > ${PARSE_FILE}
-		CONTENT=$(awk '{print $0"\\n"}' ${PARSE_FILE})
-		CONTENT="\"$(echo ${CONTENT} | awk '{gsub(/"/, "\\\"")} 1')\""
+		format_file_as_JSON_string ${OPTARG}
 	    fi
 	    ;;
 	n)
-            # We expect the user to provide his own newlines, but we can escape
-            # double-quotes for him
+            # We expect the user to escape most special characters, but we can escape
+            # double-quotes for him/her
             FILENAME="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	c)
@@ -49,7 +75,7 @@ while getopts "f:n:c:u:d:p" flag; do
             CONTENT="\"$(echo ${OPTARG} | awk '{gsub(/"/, "\\\"")} 1')\""
 	    ;;
 	u)
-	    USER="--user ${OPTARG}"
+	    USER="-u${OPTARG}"
 	    ;;
 	d)
             # Again escaping double-quotes
@@ -69,13 +95,13 @@ while getopts "f:n:c:u:d:p" flag; do
 done
 						     
 # This is the formatting of the JSON request as per the Github Gist API
-echo "{${DESCRIPTION}\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${TMP_FILE}
+echo "{${DESCRIPTION}\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\": ${CONTENT}}}}" > ${JSON_FILE}
 
 
 # This line has a lot going for it. We send the curl request, with
 # user-authentication if requested, and set up the POST request.
 # We process the response HTML and print the URL of the gist to the user
-curl --silent ${USER} -X POST -H 'Content-Type: application/json' -d @${TMP_FILE} https://api.github.com/gists | grep "html_url" | head -n 1 | awk '{gsub(/^ +/, "")} 1'
+curl --silent ${USER} -X POST -H 'Content-Type: application/json' -d @${JSON_FILE} https://api.github.com/gists | grep "html_url" | head -n 1 | awk '{gsub(/^ +/, "")} 1'
 
 # If we could not find the html_url in the response, then we have to tell the
 # user that the http request failed and that his/her gist was not posted
