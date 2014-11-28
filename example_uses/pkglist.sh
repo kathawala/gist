@@ -14,4 +14,4 @@ pacman -Qqe | grep -v "$(pacman -Qqm)" > pkglist
 echo "===========================================" >> pkglist
 pacman -Qqm >> pkglist
 
-gist ${USER} -p -d "Official pkgs (aur pkgs appended at end)" pkglist
+gist.sh ${USER} -p -d "Official pkgs (aur pkgs appended at end)" pkglist
