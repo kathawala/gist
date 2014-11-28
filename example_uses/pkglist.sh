@@ -5,6 +5,8 @@
 set -o errexit
 trap "rm /tmp/pkglist &> /dev/null" EXIT
 
+# Example: if user is named sonic then line should read USER="-usonic" 
+# (-u must prepend username)
 USER=""
 
 cd /tmp
@@ -12,4 +14,4 @@ pacman -Qqe | grep -v "$(pacman -Qqm)" > pkglist
 echo "===========================================" >> pkglist
 pacman -Qqm >> pkglist
 
-gist -u${USER} -p -d "Official pkgs (aur pkgs appended at end)" pkglist
+gist ${USER} -p -d "Official pkgs (aur pkgs appended at end)" pkglist
