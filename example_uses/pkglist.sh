@@ -3,7 +3,7 @@
 # private and anonymous and useless.
 
 set -o errexit
-trap "rm /tmp/pkglist &> /dev/null" EXIT
+trap 'rm /tmp/pkglist &> /dev/null' EXIT
 
 # Example: if user is named sonic then line should read USER="-usonic" 
 # (-u must prepend username)
