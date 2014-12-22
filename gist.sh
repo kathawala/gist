@@ -28,7 +28,7 @@ trap cleanup EXIT
 # literal newlines and literal tab characters (\n\t) where newlines and
 # tabs originally were in the text.
 function format_file_as_JSON_string() {
-    sed -e 's/\\/\\\\/g' < ${1} > ${PARSE_FILE}
+    sed -e 's/\\/\\\\/g' < "${1}" > ${PARSE_FILE}
     awk '{print $0"\\n"}' ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
     awk '{gsub(/"/, "\\\"")} 1' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
     sed 's/\t/\\t/g' < ${PARSE_FILE} > ${TMP} && mv ${TMP} ${PARSE_FILE}
@@ -103,15 +103,15 @@ fi
 # If we are here we must have an argument, so we go ahead and process
 # the file given into valid JSON.
 FILE=${1}
-if [ ! -f ${FILE} ]; then
+if [ ! -f "${FILE}" ]; then
     echo "${FILE} does not exist. Please specify an existing filename"
     exit 1
 else
     # Strip everything but the filename (/usr/test.txt -> test.txt)
-    if [ -z ${FILENAME} ]; then
-        FILENAME="\"$(basename ${FILE})\""
+    if [ -z "${FILENAME}" ]; then
+        FILENAME="\"$(basename "${FILE}")\""
     fi
-    format_file_as_JSON_string ${FILE}
+    format_file_as_JSON_string "${FILE}"
 fi
 						     
 # This is the formatting of the JSON request as per the Github Gist API
@@ -130,7 +130,7 @@ echo "{${DESCRIPTION}\"public\": ${PUBLIC}, \"files\": {${FILENAME}: {\"content\
 # This line has a lot going for it. We send the curl request, with
 # user-authentication if requested, and set up the POST request.
 # We process the response HTML and print the URL of the gist to the user
-curl --silent ${USER} -X POST -H 'Content-Type: application/json' -d @${JSON_FILE} https://api.github.com/gists | grep "html_url" | head -n 1 | awk '{gsub(/^ +/, "")} 1'
+curl --silent "${USER}" -X POST -H 'Content-Type: application/json' -d @${JSON_FILE} https://api.github.com/gists | grep "html_url" | head -n 1 | awk '{gsub(/^ +/, "")} 1'
 
 # If we could not find the html_url in the response, then we have to tell the
 # user that the http request failed and that his/her gist was not posted
