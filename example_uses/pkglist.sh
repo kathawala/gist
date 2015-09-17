@@ -2,7 +2,7 @@
 
 set -o errexit
 
-USER=""
+USER=$1
 
 FILENAME=`mktemp -t pkglist.XXXXXX`
 trap "rm $FILENAME* 2>/dev/null" EXIT
