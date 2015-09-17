@@ -1,4 +1,6 @@
 #!/bin/bash
+# For the best usage, set USER equal to your GitHub username rather than giving that info
+# at the command line each time.
 
 set -o errexit
 
