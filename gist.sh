@@ -76,15 +76,24 @@ fi
 # If we are here we must have an argument, so we go ahead and process
 # the file given into valid JSON.
 FILE=${1}
-if [ ! -f "${FILE}" ]; then
-    echo "${FILE} does not exist. Please specify an existing filename"
-    exit 1
-else
+if [ "${FILE}" = "-" -a -n "$FILENAME" -o -f "${FILE}" ]; then
     # Strip everything but the filename (/usr/test.txt -> test.txt)
     if [ -z "${FILENAME}" ]; then
         FILENAME="\"$(basename "${FILE}")\""
     fi
-    CONTENT="\"$(format_file_as_JSON_string < "${FILE}")\""
+
+    if [ "${FILE}" = "-" ]; then
+        CONTENT="\"$(format_file_as_JSON_string)\""
+    else
+        CONTENT="\"$(format_file_as_JSON_string < "${FILE}")\""
+    fi
+else
+    if [ "${FILE}" != "-" ]; then
+        echo "${FILE} does not exist. Please specify an existing filename"
+    else
+        echo "Missing a filename. Please supply a filename (with -n) for STDIN"
+    fi
+    exit 1
 fi
 						     
 # This is the formatting of the JSON request as per the Github Gist API
