@@ -3,7 +3,7 @@ Bash script which allows you to post a text file as a Github Gist
 USAGE
 =====
 
-Allows you to post a text file as a gist under any username or anonymously. Takes in a file as an argument, the contents of which are posted as the gist to github. User can specify other options to change the name, description, visibility, etc of the gist. Called without arguments, the script prints out a help message.
+Allows you to post a text file as a gist under any username or anonymously. Takes in a file as an argument (use "-" if you would like to read the file from STDIN), the contents of which are posted as the gist to github. User can specify other options to change the name, description, visibility, etc of the gist. Called without arguments, the script prints out a help message.
 
 FLAGS
 =====
@@ -30,6 +30,10 @@ Create an anonymous gist with a name different from the name of the file contain
 Create a private gist under your username with a description attached
 
 > `gist.sh -p -u "exampleuser" -d "A mind-blowing text file!" test.txt`
+
+Create a gist from STDIN (in this example a list of all the files in the current directory)
+
+> `for f in *; do echo "$f"; done | gist -u "exampleuser" -n files.txt -`
 
 OUTPUT
 ======
