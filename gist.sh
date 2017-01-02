@@ -76,23 +76,25 @@ fi
 # If we are here we must have an argument, so we go ahead and process
 # the file given into valid JSON.
 FILE=${1}
-if [ "${FILE}" = "-" -a -n "$FILENAME" -o -f "${FILE}" ]; then
-    # Strip everything but the filename (/usr/test.txt -> test.txt)
+# Here we treat the argument as a file on the local system
+if [ -f "${FILE}" ]; then
     if [ -z "${FILENAME}" ]; then
-        FILENAME="\"$(basename "${FILE}")\""
+	# Strip everything but the filename (/usr/test.txt -> test.txt)
+	FILENAME="\"$(basename "${FILE}")\""
     fi
+    CONTENT="\"$(format_file_as_JSON_string < "${FILE}")\""
 
-    if [ "${FILE}" = "-" ]; then
-        CONTENT="\"$(format_file_as_JSON_string)\""
-    else
-        CONTENT="\"$(format_file_as_JSON_string < "${FILE}")\""
+# Here we treat the argument as STDIN
+elif [ "${FILE}" = "-" ]; then
+    if [ -z "${FILENAME}" ]; then
+	echo "Missing a filename. Please supply a filename (with -n) for STDIN"
+	exit 1
     fi
+    CONTENT="\"$(format_file_as_JSON_string)\""
+
+# Here we handle malformed file input
 else
-    if [ "${FILE}" != "-" ]; then
-        echo "${FILE} does not exist. Please specify an existing filename"
-    else
-        echo "Missing a filename. Please supply a filename (with -n) for STDIN"
-    fi
+    echo "${FILE} does not exist. Please specify an existing filename"
     exit 1
 fi
 						     
