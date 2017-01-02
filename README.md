@@ -33,7 +33,7 @@ Create a private gist under your username with a description attached
 
 Create a gist from STDIN (in this example a list of all the files in the current directory)
 
-> `for f in *; do echo "$f"; done | gist -u "exampleuser" -n files.txt -`
+> `for f in *; do echo "$f"; done | gist -u "exampleuser" -n "files.txt" -`
 
 OUTPUT
 ======
